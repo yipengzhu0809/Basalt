@@ -1,3 +1,11 @@
+/*
+ * @Author: yipengzhu0809 yipeng.zhu2022@gmail.com
+ * @Date: 2023-08-01 03:38:11
+ * @LastEditors: yipengzhu0809 yipeng.zhu2022@gmail.com
+ * @LastEditTime: 2023-08-01 04:42:51
+ * @FilePath: /basalt/src/calibrate.cpp
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 /**
 BSD 3-Clause License
 
@@ -38,6 +46,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <CLI/CLI.hpp>
 
 int main(int argc, char **argv) {
+  std::cout << "Camera Calibration Start!" << std::endl;
   std::string dataset_path;
   std::string dataset_type;
   std::string aprilgrid_path;
