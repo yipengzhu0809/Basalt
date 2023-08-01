@@ -196,6 +196,7 @@ bool CalibHelper::initializeIntrinsics(
   double gamma0 = 0.0;
   double minReprojErr = std::numeric_limits<double>::max();
 
+  //!=============The function of this code is to extract corner points from AprilTag's image and then convert those corner points into a matrix P for least squares plane fitting.======================
   // Now we try to find a non-radial line to initialize the focal length
   const size_t target_cols = aprilgrid.getTagCols();
   const size_t target_rows = aprilgrid.getTagRows();
@@ -212,6 +213,7 @@ bool CalibHelper::initializeIntrinsics(
 
         for (int i = 0; i < 2; i++) {
           int corner_id = tag_offset + i + tag_corner_offset * 2;
+          //!In each tag, there are four corner points, two of which are duplicates. This loop uses the variable tag_corner_offset to select different pairs of corner points. In the first loop, the first and third corner points are selected; in the second loop, the second and fourth corner points are selected.
 
           // std::cerr << corner_id << " ";
 
@@ -225,11 +227,12 @@ bool CalibHelper::initializeIntrinsics(
           }
         }
       }
-
+      //!===========================================================
       // std::cerr << std::endl;
 
       const int MIN_CORNERS = 8;
       // MIN_CORNERS is an arbitrary threshold for the number of corners
+      //!=============The final output of this code is a normal vector C which describes the direction of the normal to the least squares plane in which the point cloud P is located.======================
       if (P.size() > MIN_CORNERS) {
         // Resize P to fit with the count of valid points.
 
@@ -250,7 +253,7 @@ bool CalibHelper::initializeIntrinsics(
         Eigen::Vector4d C = svd.matrixV().col(3);
         // std::cerr << "C\n" << C.transpose() << std::endl;
         // std::cerr << "P*res\n" << P_mat.transpose() * C << std::endl;
-
+        //! ==========================================================
         double t = square(C(0)) + square(C(1)) + C(2) * C(3);
         if (t < 0) {
           continue;

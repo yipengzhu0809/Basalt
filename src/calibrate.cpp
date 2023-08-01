@@ -1,10 +1,34 @@
 /*
  * @Author: yipengzhu0809 yipeng.zhu2022@gmail.com
+ * @LastEditors: yipengzhu0809
+ * @Description: 
  * @Date: 2023-08-01 03:38:11
- * @LastEditors: yipengzhu0809 yipeng.zhu2022@gmail.com
- * @LastEditTime: 2023-08-01 04:42:51
+ * @LastEditTime: 2023-08-01 16:48:53
  * @FilePath: /basalt/src/calibrate.cpp
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
+/*
+ * @Author: yipengzhu0809 yipeng.zhu2022@gmail.com
+ * @LastEditors: yipengzhu0809
+ * @Description: 
+ * @Date: 2023-08-01 03:38:11
+ * @LastEditTime: 2023-08-01 16:48:52
+ * @FilePath: /basalt/src/calibrate.cpp
+ */
+/*
+ * @Author: yipengzhu0809 yipeng.zhu2022@gmail.com
+ * @LastEditors: yipengzhu0809
+ * @Description: 
+ * @Date: 2023-08-01 03:38:11
+ * @LastEditTime: 2023-08-01 16:48:50
+ * @FilePath: /basalt/src/calibrate.cpp
+ */
+/*
+ * @Author: yipengzhu0809 yipeng.zhu2022@gmail.com
+ * @LastEditors: yipengzhu0809
+ * @Description: 
+ * @Date: 2023-08-01 03:38:11
+ * @LastEditTime: 2023-08-01 16:48:45
+ * @FilePath: /basalt/src/calibrate.cpp
  */
 /**
 BSD 3-Clause License
