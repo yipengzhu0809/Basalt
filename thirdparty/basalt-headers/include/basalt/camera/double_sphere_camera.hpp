@@ -3,7 +3,7 @@
  * @LastEditors: yipengzhu0809
  * @Description: This code implements the triple sphere model on top of the double sphere for underwater cameras.
  * @Date: 2023-08-01 03:38:36
- * @LastEditTime: 2023-08-01 21:13:13
+ * @LastEditTime: 2023-08-01 21:21:30
  * @FilePath: /basalt/thirdparty/basalt-headers/include/basalt/camera/double_sphere_camera.hpp
  */
 /**
@@ -77,8 +77,6 @@ class DoubleSphereCamera {
   using Mat42 = Eigen::Matrix<Scalar, 4, 2>;
   using Mat4N = Eigen::Matrix<Scalar, 4, N>;
   using Mat3N = Eigen::Matrix<Scalar, 3, N>;
-  using Mat5N = Eigen::Matrix<Scalar, 5, N>;
-  using Mat6N = Eigen::Matrix<Scalar, 6, N>;
 
   /// @brief Default constructor with zero intrinsics
   DoubleSphereCamera() { param_.setZero(); }
