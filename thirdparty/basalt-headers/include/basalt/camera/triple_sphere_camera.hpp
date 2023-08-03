@@ -103,6 +103,7 @@ class TripleSphereCamera {
 
     const Scalar& xi = param_[4];
     const Scalar& alpha = param_[5];
+    const Scalar& lambda = param_[6];
 
     const Scalar& x = p3d_eval[0];
     const Scalar& y = p3d_eval[1];
@@ -120,7 +121,7 @@ class TripleSphereCamera {
     const Scalar w1 = alpha > Scalar(0.5) ? (Scalar(1) - alpha) / alpha
                                           : alpha / (Scalar(1) - alpha);
     const Scalar w2 =
-        (w1 + xi) / sqrt(Scalar(2) * w1 * xi + xi * xi + Scalar(1));
+        (w1 + xi + lambda) / sqrt(Scalar(1)+(xi+lambda)*(xi+lambda)+2*w1*(xi+lambda));
 
     const bool is_valid = (z > -w2 * d1);
 
@@ -130,13 +131,24 @@ class TripleSphereCamera {
     const Scalar d2_2 = r2 + kk;
     const Scalar d2 = sqrt(d2_2);
 
+    const Scalar j = k + lambda * d2;
+    const Scalar jj = j*j;
+
+    const Scalar d3_2 = r2 + jj;
+    const Scalar d3 = sqrt(d3_2);
+
     const Scalar norm = alpha * d2 + (Scalar(1) - alpha) * k;
 
     const Scalar mx = x / norm;
     const Scalar my = y / norm;
 
-    proj[0] = fx * mx + cx;
-    proj[1] = fy * my + cy;
+    proj[0] = fx * mx + cx; //TODO need to be remove later
+    proj[1] = fy * my + cy; //TODO need to be remove later
+
+    const Scalar S = z + xi*d1 + lambda*d2 + (alpha/(Scalar(1)-alpha))*d3;
+
+    proj[0] = (Scalar(1)/S)*(fx*x+cx*S);
+    proj[1] = (Scalar(1)/S)*(fy*y+cy*S);
 
     if constexpr (!std::is_same_v<DerivedJ3D, std::nullptr_t>) {
       BASALT_ASSERT(d_proj_d_p3d);
@@ -242,9 +254,17 @@ class TripleSphereCamera {
 
     const Scalar& xi = param_[4];
     const Scalar& alpha = param_[5];
+    const Scalar& lambda = param_[6];
 
     const Scalar mx = (proj_eval[0] - cx) / fx;
     const Scalar my = (proj_eval[1] - cy) / fy;
+
+    const Scalar S = alpha > Scalar(0.5) ? (Scalar(1) - alpha) / alpha
+                                          : alpha / (Scalar(1) - alpha);
+    const Scalar& gamma = (S+sqrt(Scalar(1)+(1-S*S)*(mx*mx+my*my)))/(mx*mx+my*my+Scalar(1));
+    const Scalar& eta = lambda*(gamma-S)+sqrt(lambda*lambda*(gamma-S)*(gamma-S)-lambda*lambda+1);
+
+    
 
     const Scalar r2 = mx * mx + my * my;
 
@@ -259,17 +279,24 @@ class TripleSphereCamera {
 
     const Scalar norm2 = alpha * sqrt2 + Scalar(1) - alpha;
 
-    const Scalar mz = (Scalar(1) - xi2_2 * r2) / norm2;
+    const Scalar mz1 = (Scalar(1) - xi2_2 * r2) / norm2;
+    const Scalar mz = eta*(gamma-S)-lambda+mz1-mz1;
     const Scalar mz2 = mz * mz;
 
     const Scalar norm1 = mz2 + r2;
     const Scalar sqrt1 = sqrt(mz2 + (Scalar(1) - xi1_2) * r2);
     const Scalar k = (mz * xi + sqrt1) / norm1;
 
+    const Scalar mu = xi*mz+sqrt(xi*xi*mz*mz-xi*xi+1);
+
     p3d.setZero();
     p3d[0] = k * mx;
     p3d[1] = k * my;
     p3d[2] = k * mz - xi;
+
+    p3d[0] = mu * eta * gamma * mx;
+    p3d[1] = mu * eta * gamma * my;
+    p3d[2] = mu * mz - xi;
 
     if constexpr (!std::is_same_v<DerivedJ2D, std::nullptr_t> ||
                   !std::is_same_v<DerivedJparam, std::nullptr_t>) {
