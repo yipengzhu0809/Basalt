@@ -3,7 +3,7 @@
  * @LastEditors: yipengzhu0809
  * @Description: 
  * @Date: 2023-08-01 03:38:11
- * @LastEditTime: 2023-08-01 16:48:53
+ * @LastEditTime: 2023-08-03 14:07:09
  * @FilePath: /basalt/src/calibrate.cpp
  */
 /*
@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
 
   app.add_option("--skip-images", skip_images, "Number of images to skip");
   app.add_option("--cam-types", cam_types,
-                 "Type of cameras (eucm, ds, kb4, pinhole)")
+                 "Type of cameras (eucm, ds, kb4, pinhole, ts)")
       ->required();
 
   try {
