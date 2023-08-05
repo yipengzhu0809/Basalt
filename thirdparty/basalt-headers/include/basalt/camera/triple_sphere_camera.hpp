@@ -137,13 +137,13 @@ class TripleSphereCamera {
     const Scalar d3_2 = r2 + jj;
     const Scalar d3 = sqrt(d3_2);
 
-    const Scalar norm = alpha * d2 + (Scalar(1) - alpha) * k;
+    // const Scalar norm = alpha * d2 + (Scalar(1) - alpha) * k;
 
-    const Scalar mx = x / norm;
-    const Scalar my = y / norm;
+    // const Scalar mx = x / norm;
+    // const Scalar my = y / norm;
 
-    proj[0] = fx * mx + cx; //TODO need to be remove later
-    proj[1] = fy * my + cy; //TODO need to be remove later
+    // proj[0] = fx * mx + cx; //TODO need to be remove later
+    // proj[1] = fy * my + cy; //TODO need to be remove later
 
     const Scalar S = z + xi*d1 + lambda*d2 + (alpha/(Scalar(1)-alpha))*d3;
 
@@ -153,16 +153,16 @@ class TripleSphereCamera {
     if constexpr (!std::is_same_v<DerivedJ3D, std::nullptr_t>) {
       BASALT_ASSERT(d_proj_d_p3d);
 
-      const Scalar norm2 = norm * norm;
-      const Scalar xy = x * y;
-      const Scalar tt2 = xi * z / d1 + Scalar(1);
+      // const Scalar norm2 = norm * norm;
+      // const Scalar xy = x * y;
+      // const Scalar tt2 = xi * z / d1 + Scalar(1);
 
-      const Scalar d_norm_d_r2 = (xi * (Scalar(1) - alpha) / d1 +
-                                  alpha * (xi * k / d1 + Scalar(1)) / d2) /
-                                 norm2;
+      // const Scalar d_norm_d_r2 = (xi * (Scalar(1) - alpha) / d1 +
+      //                             alpha * (xi * k / d1 + Scalar(1)) / d2) /
+      //                            norm2;
 
-      const Scalar tmp2 =
-          ((Scalar(1) - alpha) * tt2 + alpha * k * tt2 / d2) / norm2;
+      // const Scalar tmp2 =
+      //     ((Scalar(1) - alpha) * tt2 + alpha * k * tt2 / d2) / norm2;
       
       const Scalar d1dx = x / d1;
       const Scalar d2dx = (x+(xi*d1+z)*xi*d1dx)/ d2;
@@ -189,14 +189,14 @@ class TripleSphereCamera {
 
 
       d_proj_d_p3d->setZero();
-      (*d_proj_d_p3d)(0, 0) = fx * (Scalar(1) / norm - xx * d_norm_d_r2);
-      (*d_proj_d_p3d)(1, 0) = -fy * xy * d_norm_d_r2;
+      // (*d_proj_d_p3d)(0, 0) = fx * (Scalar(1) / norm - xx * d_norm_d_r2);
+      // (*d_proj_d_p3d)(1, 0) = -fy * xy * d_norm_d_r2;
 
-      (*d_proj_d_p3d)(0, 1) = -fx * xy * d_norm_d_r2;
-      (*d_proj_d_p3d)(1, 1) = fy * (Scalar(1) / norm - yy * d_norm_d_r2);
+      // (*d_proj_d_p3d)(0, 1) = -fx * xy * d_norm_d_r2;
+      // (*d_proj_d_p3d)(1, 1) = fy * (Scalar(1) / norm - yy * d_norm_d_r2);
 
-      (*d_proj_d_p3d)(0, 2) = -fx * x * tmp2;
-      (*d_proj_d_p3d)(1, 2) = -fy * y * tmp2;
+      // (*d_proj_d_p3d)(0, 2) = -fx * x * tmp2;
+      // (*d_proj_d_p3d)(1, 2) = -fy * y * tmp2;
 
       (*d_proj_d_p3d)(0, 0) = dudx;
       (*d_proj_d_p3d)(0, 1) = dudy;
@@ -212,22 +212,40 @@ class TripleSphereCamera {
     if constexpr (!std::is_same_v<DerivedJparam, std::nullptr_t>) {
       BASALT_ASSERT(d_proj_d_param);
 
-      const Scalar norm2 = norm * norm;
+      // const Scalar norm2 = norm * norm;
 
       (*d_proj_d_param).setZero();
-      (*d_proj_d_param)(0, 0) = mx;
+      // (*d_proj_d_param)(0, 0) = mx;
+      // (*d_proj_d_param)(0, 2) = Scalar(1);
+      // (*d_proj_d_param)(1, 1) = my;
+      // (*d_proj_d_param)(1, 3) = Scalar(1);
+
+      // const Scalar tmp4 = (alpha - Scalar(1) - alpha * k / d2) * d1 / norm2;
+      // const Scalar tmp5 = (k - d2) / norm2;
+
+      // (*d_proj_d_param)(0, 4) = fx * x * tmp4;
+      // (*d_proj_d_param)(1, 4) = fy * y * tmp4;
+
+      // (*d_proj_d_param)(0, 5) = fx * x * tmp5;
+      // (*d_proj_d_param)(1, 5) = fy * y * tmp5;
+
+      const Scalar d2dxi = k*d1/d2;
+      const Scalar d3dla = j*d2/d3;
+      (*d_proj_d_param)(0, 0) = x/S;
+      (*d_proj_d_param)(0, 1) = Scalar(0);
       (*d_proj_d_param)(0, 2) = Scalar(1);
-      (*d_proj_d_param)(1, 1) = my;
-      (*d_proj_d_param)(1, 3) = Scalar(1);
+      (*d_proj_d_param)(0, 3) = Scalar(0);
+      (*d_proj_d_param)(0, 4) = (Scalar(-1)*fx*x/(S*S))*(d1+lambda*d2dxi+(alpha/(Scalar(1)-alpha))*j*(d1+lambda*d2dxi)/d3);
+      (*d_proj_d_param)(0, 5) = (Scalar(-1)*fx*x/(S*S))*d3*(Scalar(1)/((Scalar(1)-alpha)*(Scalar(1)-alpha)));
+      (*d_proj_d_param)(0, 6) = (Scalar(-1)*fx*x/(S*S))*(d2+(alpha/(Scalar(1)-alpha))*d3dla);
 
-      const Scalar tmp4 = (alpha - Scalar(1) - alpha * k / d2) * d1 / norm2;
-      const Scalar tmp5 = (k - d2) / norm2;
-
-      (*d_proj_d_param)(0, 4) = fx * x * tmp4;
-      (*d_proj_d_param)(1, 4) = fy * y * tmp4;
-
-      (*d_proj_d_param)(0, 5) = fx * x * tmp5;
-      (*d_proj_d_param)(1, 5) = fy * y * tmp5;
+      (*d_proj_d_param)(0, 0) = Scalar(0);
+      (*d_proj_d_param)(0, 1) = y/S;
+      (*d_proj_d_param)(0, 2) = Scalar(0);
+      (*d_proj_d_param)(0, 3) = Scalar(1);
+      (*d_proj_d_param)(0, 4) = (Scalar(-1)*fy*y/(S*S))*(d1+lambda*d2dxi+(alpha/(Scalar(1)-alpha))*j*(d1+lambda*d2dxi)/d3);
+      (*d_proj_d_param)(0, 5) = (Scalar(-1)*fy*y/(S*S))*d3*(Scalar(1)/((Scalar(1)-alpha)*(Scalar(1)-alpha)));
+      (*d_proj_d_param)(0, 6) = (Scalar(-1)*fy*y/(S*S))*(d2+(alpha/(Scalar(1)-alpha))*d3dla);
     } else {
       UNUSED(d_proj_d_param);
     }
