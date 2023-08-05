@@ -121,7 +121,7 @@ class TripleSphereCamera {
     const Scalar w1 = alpha > Scalar(0.5) ? (Scalar(1) - alpha) / alpha
                                           : alpha / (Scalar(1) - alpha);
     const Scalar w2 =
-        (w1 + xi + lambda) / sqrt(Scalar(1)+(xi+lambda)*(xi+lambda)+2*w1*(xi+lambda));
+        (w1 + xi + lambda) / sqrt(Scalar(1)+(xi+lambda)*(xi+lambda)+Scalar(2)*w1*(xi+lambda));
 
     const bool is_valid = (z > -w2 * d1);
 
@@ -163,6 +163,30 @@ class TripleSphereCamera {
 
       const Scalar tmp2 =
           ((Scalar(1) - alpha) * tt2 + alpha * k * tt2 / d2) / norm2;
+      
+      const Scalar d1dx = x / d1;
+      const Scalar d2dx = (x+(xi*d1+z)*xi*d1dx)/ d2;
+      const Scalar d3dx = (x+j*(lambda*d2dx+xi*d1dx)) / d3;
+      const Scalar dSdx = xi*d1dx+lambda*d2dx+(alpha/(Scalar(1)-alpha))*d3dx;
+      const Scalar dudx = (fx*S-fx*x*dSdx)/(S*S);
+
+      const Scalar d1dy = y / d1;
+      const Scalar d2dy = (y + (xi*d1+z)*xi*d1dy)/d2;
+      const Scalar d3dy = (y+(lambda*d2+xi*d1+z)*(lambda*d2dy+xi*d1dy))/d3;
+      const Scalar dSdy = xi*d1dy+lambda*d2dy+(alpha/(Scalar(1)-alpha))*d3dy;
+      const Scalar dudy = (Scalar(-1)*dSdy*fx*x)/(S*S);
+
+      const Scalar d1dz = z / d1;
+      const Scalar d2dz = (xi*d1+z)*(xi*d1dz+Scalar(1))/d2;
+      const Scalar d3dz = (lambda*d2dz+xi*d1dz+Scalar(1))*(lambda*d2+xi*d1+z)/d3;
+      const Scalar dSdz = Scalar(1)+xi*d1dz+lambda*d2dz+(alpha/(Scalar(1)-alpha))*d3dz;
+      const Scalar dudz = (Scalar(-1)*dSdz*fx*x)/(S*S);
+
+      const Scalar dvdx = Scalar(-1)*dSdx*fy*y/(S*S);
+      const Scalar dvdy = (fy*S-dSdy*fy*y)/(S*S);
+      const Scalar dvdz = Scalar(-1)*dSdz*fy*y/(S*S);
+
+
 
       d_proj_d_p3d->setZero();
       (*d_proj_d_p3d)(0, 0) = fx * (Scalar(1) / norm - xx * d_norm_d_r2);
@@ -173,6 +197,14 @@ class TripleSphereCamera {
 
       (*d_proj_d_p3d)(0, 2) = -fx * x * tmp2;
       (*d_proj_d_p3d)(1, 2) = -fy * y * tmp2;
+
+      (*d_proj_d_p3d)(0, 0) = dudx;
+      (*d_proj_d_p3d)(0, 1) = dudy;
+      (*d_proj_d_p3d)(0, 2) = dudz;
+      (*d_proj_d_p3d)(1, 0) = dvdx;
+      (*d_proj_d_p3d)(1, 1) = dvdy;
+      (*d_proj_d_p3d)(1, 2) = dvdz;
+
     } else {
       UNUSED(d_proj_d_p3d);
     }
@@ -287,7 +319,7 @@ class TripleSphereCamera {
     const Scalar sqrt1 = sqrt(mz2 + (Scalar(1) - xi1_2) * r2);
     const Scalar k = (mz * xi + sqrt1) / norm1;
 
-    const Scalar mu = xi*mz+sqrt(xi*xi*mz*mz-xi*xi+1);
+    const Scalar mu = xi*mz+sqrt(xi*xi*mz*mz-xi*xi+Scalar(1));
 
     p3d.setZero();
     p3d[0] = k * mx;
