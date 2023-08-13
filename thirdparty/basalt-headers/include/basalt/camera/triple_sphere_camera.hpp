@@ -239,13 +239,13 @@ class TripleSphereCamera {
       (*d_proj_d_param)(0, 5) = (Scalar(-1)*fx*x/(S*S))*d3*(Scalar(1)/((Scalar(1)-alpha)*(Scalar(1)-alpha)));
       (*d_proj_d_param)(0, 6) = (Scalar(-1)*fx*x/(S*S))*(d2+(alpha/(Scalar(1)-alpha))*d3dla);
 
-      (*d_proj_d_param)(0, 0) = Scalar(0);
-      (*d_proj_d_param)(0, 1) = y/S;
-      (*d_proj_d_param)(0, 2) = Scalar(0);
-      (*d_proj_d_param)(0, 3) = Scalar(1);
-      (*d_proj_d_param)(0, 4) = (Scalar(-1)*fy*y/(S*S))*(d1+lambda*d2dxi+(alpha/(Scalar(1)-alpha))*j*(d1+lambda*d2dxi)/d3);
-      (*d_proj_d_param)(0, 5) = (Scalar(-1)*fy*y/(S*S))*d3*(Scalar(1)/((Scalar(1)-alpha)*(Scalar(1)-alpha)));
-      (*d_proj_d_param)(0, 6) = (Scalar(-1)*fy*y/(S*S))*(d2+(alpha/(Scalar(1)-alpha))*d3dla);
+      (*d_proj_d_param)(1, 0) = Scalar(0);
+      (*d_proj_d_param)(1, 1) = y/S;
+      (*d_proj_d_param)(1, 2) = Scalar(0);
+      (*d_proj_d_param)(1, 3) = Scalar(1);
+      (*d_proj_d_param)(1, 4) = (Scalar(-1)*fy*y/(S*S))*(d1+lambda*d2dxi+(alpha/(Scalar(1)-alpha))*j*(d1+lambda*d2dxi)/d3);
+      (*d_proj_d_param)(1, 5) = (Scalar(-1)*fy*y/(S*S))*d3*(Scalar(1)/((Scalar(1)-alpha)*(Scalar(1)-alpha)));
+      (*d_proj_d_param)(1, 6) = (Scalar(-1)*fy*y/(S*S))*(d2+(alpha/(Scalar(1)-alpha))*d3dla);
     } else {
       UNUSED(d_proj_d_param);
     }
@@ -309,6 +309,9 @@ class TripleSphereCamera {
     const Scalar mx = (proj_eval[0] - cx) / fx;
     const Scalar my = (proj_eval[1] - cy) / fy;
 
+    const Scalar u = proj_eval[0];
+    const Scalar v = proj_eval[1];
+
     const Scalar S = alpha > Scalar(0.5) ? (Scalar(1) - alpha) / alpha
                                           : alpha / (Scalar(1) - alpha);
     const Scalar& gamma = (S+sqrt(Scalar(1)+(1-S*S)*(mx*mx+my*my)))/(mx*mx+my*my+Scalar(1));
@@ -318,9 +321,11 @@ class TripleSphereCamera {
 
     const Scalar r2 = mx * mx + my * my;
 
-    const bool is_valid =
-        !static_cast<bool>(alpha > Scalar(0.5) &&
-                           (r2 >= Scalar(1) / (Scalar(2) * alpha - Scalar(1))));
+    //const Scalar tmp3 = (sqrt(Scalar(1)+(Scalar(1)-S*S)*r2) / (r2+Scalar(1)))-((S*r2)/(r2+Scalar(1)));
+    // const Scalar tmp4 = (eta*(gamma-S)-lambda)*(eta*(gamma-S)-lambda);
+
+/*    !static_cast<bool>(alpha > Scalar(0.5) &&
+                           (r2 >= Scalar(1) / (Scalar(2) * alpha - Scalar(1))));*/    
 
     const Scalar xi2_2 = alpha * alpha;
     const Scalar xi1_2 = xi * xi;
@@ -339,6 +344,9 @@ class TripleSphereCamera {
 
     const Scalar mu = xi*mz+sqrt(xi*xi*mz*mz-xi*xi+Scalar(1));
 
+    // const bool is_valid = static_cast<bool>((r2 >= Scalar(1)/(S*S-Scalar(1))) && (lambda*lambda*tmp3*tmp3 >= lambda * lambda -Scalar(1)) && (xi*xi*tmp4-xi*xi+Scalar(1)));
+    const bool is_valid = static_cast<bool>((Scalar(1)+(Scalar(1)-S*S)*r2) >= Scalar(0) && (lambda*lambda*(gamma-S)*(gamma-S)-lambda*lambda+Scalar(1)) >= Scalar(0) && (xi*xi*mz*mz-xi*xi+Scalar(1))>=Scalar(0));
+
     p3d.setZero();
     p3d[0] = k * mx;
     p3d[1] = k * my;
@@ -346,7 +354,7 @@ class TripleSphereCamera {
 
     p3d[0] = mu * eta * gamma * mx;
     p3d[1] = mu * eta * gamma * my;
-    p3d[2] = mu * mz - xi;
+    p3d[2] = mu * mz - xi + u - u + v - v;
 
     if constexpr (!std::is_same_v<DerivedJ2D, std::nullptr_t> ||
                   !std::is_same_v<DerivedJparam, std::nullptr_t>) {
@@ -391,10 +399,42 @@ class TripleSphereCamera {
       c1[2] = (mz * d_k_d_my + k * d_mz_d_my);
       c1 /= fy;
 
+
+
+      const Scalar dmxdu = Scalar(1)/fx;
+      const Scalar dmxdv = Scalar(0);
+      const Scalar dmydu = Scalar(0);
+      const Scalar dmydv = Scalar(1)/fy;
+      const Scalar tmp1 = mx*mx+my*my+Scalar(1);
+      const Scalar tmp2 = sqrt(Scalar(1)+(Scalar(1)-S*S)*(mx*mx+my*my));
+      const Scalar dgadu = ((((1-S*S)*mx/fx)*tmp1/tmp2)-((tmp2+S)*Scalar(2)*mx/fx))/(tmp1*tmp1);
+      const Scalar detdu = lambda*dgadu+ (lambda*lambda*(gamma-S)*dgadu)/sqrt(lambda*lambda*(gamma-S)*(gamma-S)-lambda*lambda+Scalar(1));
+      const Scalar dmzdu = detdu*(gamma-S)+dgadu*eta;
+      const Scalar dmudu = xi*dmzdu+(xi*xi*mz*dmzdu)/(sqrt(Scalar(1)+xi*xi*mz*mz-xi*xi));
+      const Scalar dxdu = dmudu*eta*gamma*mx+mu*(detdu*gamma*mx+eta*(dgadu*mx+dmxdu*gamma));
+
+      const Scalar dgadv = ((((1-S*S)*my/fy)*tmp1/tmp2)-((tmp2+S)*Scalar(2)*my/fy))/(tmp1*tmp1);
+      const Scalar detdv = lambda*dgadv+ (lambda*lambda*(gamma-S)*dgadv)/sqrt(lambda*lambda*(gamma-S)*(gamma-S)-lambda*lambda+Scalar(1));
+      const Scalar dmzdv = detdv*(gamma-S)+dgadv*eta;
+      const Scalar dmudv = xi*dmzdv+(xi*xi*mz*dmzdv)/(sqrt(Scalar(1)+xi*xi*mz*mz-xi*xi));
+      const Scalar dxdv = dmudv*eta*gamma*mx+mu*(detdv*gamma*mx+eta*(dgadv*mx+dmxdv*gamma));
+
+      const Scalar dydu = dmudu*eta*gamma*my+mu*(detdu*gamma*my+eta*(dgadu*my+dmydu*gamma));
+      const Scalar dydv = dmudv*eta*gamma*my+mu*(detdv*gamma*my+eta*(dgadv*my+dmydv*gamma));
+
+      const Scalar dzdu = dmudu*mz+dmzdu*mu;
+      const Scalar dzdv = dmudv*mz+dmzdv*mu;
+
       if constexpr (!std::is_same_v<DerivedJ2D, std::nullptr_t>) {
         BASALT_ASSERT(d_p3d_d_proj);
         d_p3d_d_proj->col(0) = c0;
         d_p3d_d_proj->col(1) = c1;
+        (d_p3d_d_proj)(0,0) = dxdu;
+        (d_p3d_d_proj)(0,1) = dxdv;
+        (d_p3d_d_proj)(1,0) = dydu;
+        (d_p3d_d_proj)(1,1) = dydv;
+        (d_p3d_d_proj)(2,0) = dzdu;
+        (d_p3d_d_proj)(2,1) = dzdv;
       } else {
         UNUSED(d_p3d_d_proj);
       }
@@ -411,6 +451,69 @@ class TripleSphereCamera {
 
         const Scalar d_k_d_xi2 = d_k_d_mz * d_mz_d_xi2;
 
+        const Scalar dmxdfx = (cx - u)/(fx*fx);
+        const Scalar dmxdcx = Scalar(-1)/fx;
+        const Scalar dmydfy = (cy - v)/(fy*fy);
+        const Scalar dmydcy = Scalar(-1)/fy;
+
+        const Scalar dgadfx = (((tmp1*(1-S*S)*mx*dmxdfx)/tmp2)-(S+tmp2)*Scalar(2)*mx*dmxdfx)/(tmp1*tmp1);
+        const Scalar detdfx = lambda*dgadfx + lambda*lambda*(gamma-S)*dgadfx/sqrt(lambda*lambda*(gamma-S)*(gamma-S)-lambda*lambda+Scalar(1));
+        const Scalar dmzdfx = detdfx*(gamma-S)+dgadfx*eta;
+        const Scalar dmudfx = xi*dmzdfx+ xi*xi*mz*dmzdfx/(sqrt(Scalar(1)+xi*xi*mz*mz-xi*xi));
+
+        const Scalar dgadfy = (((tmp1*(1-S*S)*my*dmydfy)/tmp2)-(S+tmp2)*Scalar(2)*my*dmydfy)/(tmp1*tmp1);
+        const Scalar detdfy = lambda*dgadfy + lambda*lambda*(gamma-S)*dgadfy/sqrt(lambda*lambda*(gamma-S)*(gamma-S)-lambda*lambda+Scalar(1));
+        const Scalar dmzdfy = detdfy*(gamma-S)+dgadfy*eta;
+        const Scalar dmudfy = xi*dmzdfy+ xi*xi*mz*dmzdfy/(sqrt(Scalar(1)+xi*xi*mz*mz-xi*xi));
+
+        const Scalar dgadcx = (((tmp1*(1-S*S)*mx*dmxdcx)/tmp2)-(S+tmp2)*Scalar(2)*mx*dmxdcx)/(tmp1*tmp1);
+        const Scalar detdcx = lambda*dgadcx + lambda*lambda*(gamma-S)*dgadcx/sqrt(lambda*lambda*(gamma-S)*(gamma-S)-lambda*lambda+Scalar(1));
+        const Scalar dmzdcx = detdcx*(gamma-S)+dgadcx*eta;
+        const Scalar dmudcx = xi*dmzdcx+ xi*xi*mz*dmzdcx/(sqrt(Scalar(1)+xi*xi*mz*mz-xi*xi));
+
+        const Scalar dgadcy = (((tmp1*(1-S*S)*my*dmydcy)/tmp2)-(S+tmp2)*Scalar(2)*my*dmydcy)/(tmp1*tmp1);
+        const Scalar detdcy = lambda*dgadcy + lambda*lambda*(gamma-S)*dgadcy/sqrt(lambda*lambda*(gamma-S)*(gamma-S)-lambda*lambda+Scalar(1));
+        const Scalar dmzdcy = detdcy*(gamma-S)+dgadcy*eta;
+        const Scalar dmudcy = xi*dmzdcy+ xi*xi*mz*dmzdcy/(sqrt(Scalar(1)+xi*xi*mz*mz-xi*xi));
+
+        const Scalar dmudxi = mz+ (mz*mz*xi-xi)/sqrt(xi*xi*mz*mz-xi*xi+Scalar(1));
+
+        const Scalar dSdal = alpha > Scalar(0.5) ? Scalar(-1) / (alpha*alpha)
+                                          : Scalar(1) / (Scalar(1) - alpha)*(Scalar(1) - alpha);
+        const Scalar dgadal = (1/tmp1)*(dSdal-(mx*mx+my*my)*S*dSdal/(sqrt(tmp2)));
+        const Scalar detdal = lambda*(dgadal-dSdal)+ lambda*lambda*(gamma-S)*(dgadal-dSdal)/sqrt(lambda*lambda*(gamma-S)*(gamma-S)-lambda*lambda+Scalar(1));
+        const Scalar dmzdal = detdal*(gamma-S)+eta*(dgadal-dSdal);
+        const Scalar dmudal = xi*dmzdal + xi*xi*mz*dmzdal /(sqrt(Scalar(1)+xi*xi*mz*mz-xi*xi));
+
+        const Scalar detdla = (gamma-S) + ((gamma-S)*(gamma-S)*lambda - lambda)/(sqrt(lambda*lambda*(gamma-S)*(gamma-S)-lambda*lambda+Scalar(1)));
+        const Scalar dmzdla = (gamma-S)*detdla-Scalar(1);
+        const Scalar dmudla = xi*dmzdla+ xi*xi*mz*dmzdla / (sqrt(xi*xi*mz*mz-xi*xi+Scalar(1)));
+
+        const Scalar dxdfx = dmudfx*eta*gamma*mx+mu*(detdfx*gamma*mx+eta*(dgadfx*mx+dmxdfx*gamma));
+        const Scalar dxdfy = dmudfy*eta*gamma*mx+mu*(detdfy*gamma*mx+eta*(dgadfy*mx));
+        const Scalar dxdcx = dmudcx*eta*gamma*mx+mu*(detdcx*gamma*mx+eta*(dgadcx*mx+dmxdcx*gamma));
+        const Scalar dxdcy = dmudcy*eta*gamma*mx+mu*(detdcy*gamma*mx+eta*(dgadcy*mx));
+        const Scalar dxdxi = eta*gamma*mx*dmudxi;
+        const Scalar dxdal = dmudal*eta*gamma*mx+mu*(detdal*gamma*mx+eta*(dgadal*mx));
+        const Scalar dxdla = gamma*(dmudla*eta*mx+mu*(detdla*mx));
+
+        const Scalar dydfx = dmudfx*eta*gamma*my+mu*(detdfx*gamma*my+eta*(dgadfx*my));
+        const Scalar dydfy = dmudfy*eta*gamma*my+mu*(detdfy*gamma*my+eta*(dgadfy*my+dmydfy*gamma));
+        const Scalar dydcx = dmudcx*eta*gamma*my+mu*(detdcx*gamma*my+eta*(dgadcx*my));
+        const Scalar dydcy = dmudcy*eta*gamma*my+mu*(detdcy*gamma*my+eta*(dgadcy*my+dmydcy*gamma));
+        const Scalar dydxi = eta*gamma*my*dmudxi;
+        const Scalar dydal = dmudal*eta*gamma*my+mu*(detdal*gamma*my+eta*(dgadal*my));
+        const Scalar dydla = gamma*(dmudla*eta*my+mu*(detdla*my));
+
+        const Scalar dzdfx = dmudfx*mz+dmzdfx*mu;
+        const Scalar dzdfy = dmudfy*mz+dmzdfy*mu;
+        const Scalar dzdcx = dmudcx*mz+dmzdcx*mu;
+        const Scalar dzdcy = dmudcy*mz+dmzdcy*mu;
+        const Scalar dzdxi = dmudxi*mz-Scalar(1);
+        const Scalar dzdal = dmudal*mz+dmzdal*mu;
+        const Scalar dzdla = dmudla*mz+dmzdla*mu;
+
+
         d_p3d_d_param->setZero();
         (*d_p3d_d_param).col(0) = -c0 * mx;
         (*d_p3d_d_param).col(1) = -c1 * my;
@@ -425,6 +528,29 @@ class TripleSphereCamera {
         (*d_p3d_d_param)(0, 5) = mx * d_k_d_xi2;
         (*d_p3d_d_param)(1, 5) = my * d_k_d_xi2;
         (*d_p3d_d_param)(2, 5) = mz * d_k_d_xi2 + k * d_mz_d_xi2;
+        
+        (*d_p3d_d_param)(0,0) = dxdfx;
+        (*d_p3d_d_param)(0,1) = dxdfy;
+        (*d_p3d_d_param)(0,2) = dxdcx;
+        (*d_p3d_d_param)(0,3) = dxdcy;
+        (*d_p3d_d_param)(0,4) = dxdxi;
+        (*d_p3d_d_param)(0,5) = dxdal;
+        (*d_p3d_d_param)(0,6) = dxdla;
+        (*d_p3d_d_param)(1,0) = dydfx;
+        (*d_p3d_d_param)(1,1) = dydfy;
+        (*d_p3d_d_param)(1,2) = dydcx;
+        (*d_p3d_d_param)(1,3) = dydcy;
+        (*d_p3d_d_param)(1,4) = dydxi;
+        (*d_p3d_d_param)(1,5) = dydal;
+        (*d_p3d_d_param)(1,6) = dydla;
+        (*d_p3d_d_param)(2,0) = dzdfx;
+        (*d_p3d_d_param)(2,1) = dzdfy;
+        (*d_p3d_d_param)(2,2) = dzdcx;
+        (*d_p3d_d_param)(2,3) = dzdcy;
+        (*d_p3d_d_param)(2,4) = dzdxi;
+        (*d_p3d_d_param)(2,5) = dzdal;
+        (*d_p3d_d_param)(2,6) = dzdla;
+
       } else {
         UNUSED(d_p3d_d_param);
         UNUSED(d_k_d_mz);
@@ -449,7 +575,7 @@ class TripleSphereCamera {
     param_[2] = init[2];
     param_[3] = init[3];
     param_[4] = 0;
-    param_[5] = 0.5;
+    param_[5] = 0;
     param_[6] = 0;
   }
 
